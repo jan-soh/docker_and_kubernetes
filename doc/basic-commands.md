@@ -12,6 +12,9 @@
 will always create a new container!
 only use «start» to just start an existing one, e.g. «docker start 66fc5f12csd»
 
+passing the rm parameter will remove the container after it has been stopped
+> docker run --rm -it 9f99fd21a151 sh
+
 #### set a custom name for the container
 > docker run -d --name web-server nginx
 
@@ -24,6 +27,11 @@ host-port:container-port
 CONTAINER ID	IMAGE 	COMMAND	STATUS	PORTS	NAMES
 66fcd5f45a3f	nginx	"/docker-entrypoint.…"	Up 2 minutes	0.0.0.0:8080->80/tcp, [::]:8080→80/tcp	web-server
 ```
+It is also possible to set environment variables with the -e parameter
+> docker run -e PORT=3003 -e APP_NAME="another awesome express app" -d -p 3003:3003 --name express-3003 express
+
+Or via environment file
+> docker run -d -p 3003:3003 --name express-3003 --env-file .env express
 
 ### stop images
 > docker stop 3434adfg
@@ -106,14 +114,6 @@ CMD [«echo», «Hello from my first Docker image!»]
 
 > docker build .
 
-you can add a tag to the image (otherwise it will be named «<none>:<none>»)
-in this case the version is omitted resulting in the tag "web_server:latest"
-> docker build -t web_server .
- 
-this also specifies the version
-
-> docker build -t web_server:0.0.1 .
-
 this will just create the image
 
 > docker images
@@ -123,4 +123,47 @@ this will just create the image
 this image can then be run
 > docker run c67345345df
 
+#### tags
 
+you can add a tag to the image (otherwise it will be named «<none>:<none>»)
+in this case the version is omitted resulting in the tag "web_server:latest"
+> docker build -t web_server .
+ 
+this also specifies the version
+
+> docker build -t web_server:0.0.1 .
+
+you can also set aliases for tags
+> docker tag web_server:0.0.1 web_server:latest
+
+### History (and image layers)
+this will display all commands executed when building the image line by line, where every line is any image by itself
+> docker history web_server
+
+```
+IMAGE          CREATED        CREATED BY                                      SIZE      COMMENT
+7f2e2b22ecc1   17 hours ago   CMD ["node" "index.js"]                         0B        buildkit.dockerfile.v0
+<missing>      17 hours ago   EXPOSE [3001/tcp]                               0B        buildkit.dockerfile.v0
+<missing>      17 hours ago   COPY src/index.js index.js # buildkit           12.3kB    buildkit.dockerfile.v0
+```
+if the image ID is <missing>, it means that the image is not tagged and usually be removed after the build completed.
+
+### custom dockerfile
+just provide the "f" parameter followed by the path to the dockerfile
+> docker build -t cmd-example -f Dockerfile.cmd .
+
+### cmd and entrypoint
+
+we can override the cmd in the Dockerfile.cmd by passing a command to the docker run command.
+> docker run --rm cmd-example echo "hello from terminal"
+
+... which can be anything
+> docker run --rm cmd-example sh -c "apk add curl && curl https://www.google.com"
+
+that does not count for entrypoints. in this case the provided commands will be appended to the entrypoint.
+> docker run --rm entrypoint-example echo "hello from the terminal"
+
+`hello from ERNTRYPOINT in Dockerfile.entrypoint hello from the terminal`
+
+... but even this can be done
+> docker run --rm --entrypoint "echo" entrypoint-example "hello from the terminal"
