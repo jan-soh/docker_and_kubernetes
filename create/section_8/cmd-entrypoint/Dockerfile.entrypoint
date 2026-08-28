@@ -1,0 +1,3 @@
+FROM alpine:3.20
+
+ENTRYPOINT ["echo", "hello from ERNTRYPOINT in Dockerfile.entrypoint" ]
