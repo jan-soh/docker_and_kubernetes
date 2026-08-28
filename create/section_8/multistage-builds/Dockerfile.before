@@ -11,4 +11,4 @@ RUN npm ci
 COPY src src
 ENV PORT=3001
 
-CMD ["node", "src/index.js"]
+CMD ["node", "src/index.ts"]

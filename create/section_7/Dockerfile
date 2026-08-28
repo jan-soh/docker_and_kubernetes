@@ -7,8 +7,8 @@ COPY package*.json .
 # install the dependencies
 RUN npm ci
 # copy the source code
-COPY src/index.js index.js
+COPY src/index.js index.ts
 # expose the application port
 EXPOSE 3001
 # start the application
-CMD ["node", "index.js"]
+CMD ["node", "index.ts"]

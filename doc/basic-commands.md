@@ -142,9 +142,9 @@ this will display all commands executed when building the image line by line, wh
 
 ```
 IMAGE          CREATED        CREATED BY                                      SIZE      COMMENT
-7f2e2b22ecc1   17 hours ago   CMD ["node" "index.js"]                         0B        buildkit.dockerfile.v0
+7f2e2b22ecc1   17 hours ago   CMD ["node" "index.ts"]                         0B        buildkit.dockerfile.v0
 <missing>      17 hours ago   EXPOSE [3001/tcp]                               0B        buildkit.dockerfile.v0
-<missing>      17 hours ago   COPY src/index.js index.js # buildkit           12.3kB    buildkit.dockerfile.v0
+<missing>      17 hours ago   COPY src/index.ts index.ts # buildkit           12.3kB    buildkit.dockerfile.v0
 ```
 if the image ID is <missing>, it means that the image is not tagged and usually be removed after the build completed.
 
