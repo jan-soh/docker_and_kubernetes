@@ -1,0 +1,14 @@
+# gcr = google container registry
+FROM gcr.io/distroless/nodejs22
+
+WORKDIR /app
+
+COPY package*.json .
+
+# distroless would not allow this (there is no shell in fact)
+RUN npm ci
+
+COPY src src
+ENV PORT=3001
+
+CMD ["node", "src/index.js"]
