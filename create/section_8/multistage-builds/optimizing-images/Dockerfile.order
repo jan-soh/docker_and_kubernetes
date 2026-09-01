@@ -12,6 +12,7 @@ COPY package*.json .
 
 RUN npm ci
 
+# Code is likely to change more often than dependencies, so put it last
 COPY index.js index.js
 
 CMD ["node", "index.js"]
