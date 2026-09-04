@@ -167,3 +167,198 @@ that does not count for entrypoints. in this case the provided commands will be 
 
 ... but even this can be done
 > docker run --rm --entrypoint "echo" entrypoint-example "hello from the terminal"
+
+### Mounts and volumes
+Add a volume (for instance, to use hot reloading) (-v [local-dir]:[container-dir])
+> docker run --rm -d -p 3002:3000 -v ./public:/app/public -v ./src:/app/src react-app:dev
+
+This will /app/public and /app/src in the container point to the local directories of the host.
+
+#### Using named volumes
+Volumes work similarly to bind mounts, but they are managed by Docker.
+Instead of remembering the exact path to the host directory, you can use a volume name.
+> docker volume create website-data
+> docker run --rm -d -p 3002:80 --name website-main -v website-data:/usr/share/nginx/html nginx:1.27.0
+
+To show all volumes:
+> docker volume ls
+
+Show details of a volume:
+> docker volume inspect website-data
+
+Remove the volume:
+> docker volume rm website-data
+
+Remove all unused volumes:
+> docker volume rm $(docker volume ls -qf dangling=true)
+
+or simply:
+> docker volume prune
+
+### Managing CPU resources
+> docker run -d --name cpu_decimals --cpus=0.5 busybox sh -c "while true do:; done"
+
+This allows the container to use up to 50% of a single core of the CPU.
+
+> docker run -d --name cpu_share_low --cpu-shares=1 --cpuset-cpus=0 busybox sh -c "while true do:; done"
+
+`--cpu-shares=1` means that the container will use one share of the CPU – which is yet 100% because there is no other container using the CPU yet.
+
+`--cpuset-cpus=0` means that the container will only use the CPU with the ID 0.
+
+Now let’s consider running another container with shares:
+> docker run -d --name cpu_share_high --cpu-shares=3 --cpuset-cpus=0 busybox sh -c "while true do:; done"
+
+This container will use 3 of 4 shares of the CPU, resulting in 75% of the CPU, while the container with shares 1 (0cpu_share_low) will use 25% of the CPU.
+This is not a hard limit. If available, cpu_share_low container may use 100% of the CPU, if no other container is using it.
+
+> docker run -d --name cpu_quota --cpu-period=100000 --cpu-quota=25000 busybox sh -c "while true do:; done"
+
+This says that the container will use 25% of the CPU (one could also say --cpu-period=100 --cpu-quota=25).
+This is the same as saying:
+> docker run -d --name cpu_quota --cpus=0.25 busybox sh -c "while true do:; done"
+
+show stats (like CPU usage)
+> docker stats
+
+### Managing memory resources
+> docker run -d --name mongodb --memory="20m" mongodb/mongodb-community-server:7.0-ubuntu2204
+
+This might disallow the container to start, as the container requires more memory than the specified limit.
+See state ("OOMKilled" -> out of memory killer):
+> docker inspect mongodb
+
+> docker run -d --name mongodb --memory-reservation="80m" --memory="100m" mongodb/mongodb-community-server:7.0-ubuntu2204
+
+Limit the memory usage of the container to 100MiB, but reserve at least 80MiB.
+If the container tries to use more than 100MB, it will be killed.
+
+> docker run -d --name mongodb --memory="100m" --memory-swap="1g" mongodb/mongodb-community-server:7.0-ubuntu2204
+
+This will limit the memory usage of the container to 100MiB, but allow it to use up to 900GiB of swap (disk) space.
+Exceeding the memory limit of 100MiB will allow the container to continue running (and use swap memory if necessary).
+Exceeding the swap limit will cause the container to be killed.
+
+### Restarting policies
+The following will restart the container if it exits with a non-zero exit code.
+> docker run -d --name restart_fail --restart on-failure busybox sh -c "sleep 3; exit 1"
+
+We can also specify the number of restarts before the container is considered unhealthy.
+> docker run -d --name restart_fail --restart on-failure:3 busybox sh -c "sleep 3; exit 1"
+
+Validate that by inspecting the container:
+> docker inspect restart_fail | grep restart
+
+And we can also specify a restart always policy:
+> docker run -d --name restart_always --restart always busybox sh -c "sleep 3; exit 0"
+
+Stopping the container manually will not restart it:
+> docker stop restart_always
+
+The difference between restart always and restart unless-stopped is that once we stopped this container, it will not restart automatically if the docker deamon is restarted.
+> docker run -d --name restart_always --restart unless-stopped busybox sh -c "sleep 3; exit 0"
+
+### Networking
+
+Inspect networks:
+> docker network ls
+> docker network inspect bridge
+
+```
+NETWORK ID     NAME                 DRIVER    SCOPE
+5d2c14aab65d   bridge               bridge    local
+1313cbd0cfed   host                 host      local
+5b646cc9dc94   none                 null      local
+```
+`bridge` is the default and a private network and it is isolated from the host. Here we cannot connect to other containers using their name.
+`host` This network removes isolation from the host and allows containers to communicate with each other directly.
+`none` This network prevents a container from connecting to any other networks.
+
+Create a network:
+> docker network create app-net
+
+> docker network inspect app-net
+
+Create a container and connect it to the network:
+> docker run -d --name web-server nginx:1.27.0
+
+> docker network connect app-net web-server
+
+> docker inspect web-server
+
+Because we did not initially connect the container to the app-net network, when we inspect the container, we will see that it is also connected to the bridge network.
+```
+"NetworkSettings": {
+    "SandboxID": "8e429ac480f9f28bd83e71940da2242ace908e661f278f51a65ce3437c7d1579",
+    "SandboxKey": "/var/run/docker/netns/8e429ac480f9",
+    "Ports": {
+        "80/tcp": null
+    },
+    "Networks": {
+        "app-net": {
+            "IPAddress": "172.20.0.2",
+            "DNSNames": [
+                "web-server",
+                "ab0bcc2611a9"
+            ]
+            ...
+        },
+        "bridge": {
+            "IPAddress": "172.17.0.2",
+            "DNSNames": null
+            ...
+        }
+    }
+}   
+```
+As we can see, the container has a different IP address in each network and no DNS name in the bridge network.
+Lets try to connect to the web-server container by starting a new shell in a container:
+> docker run -it --network app-net alpine:3.20 sh
+
+> apk add curl
+
+> curl web-server
+
+Great:
+```
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+...
+```
+
+We can also expose port 80 of the container to the host:
+> docker run -d --name web-server --network app-net -p 80:80 nginx:1.27.0
+> curl http://localhost
+Great:
+```
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+...
+```
+
+Remove network:
+> docker network rm app-net
+
+
+### Host networking
+> docker run -d --net=host nginx:1.27.0
+> docker inspect cd65285914b2
+ 
+Interestingly, the IP address is empty, but this is because there is no isolation between the host and the container.
+```
+NetworkSettings": {
+    ...
+    "Networks": {
+        "host": {
+            ...
+            "IPAddress": "",
+...
+```
+Executing curl on the the host machine would work:
+> curl http://localhost 
+
+(On Mac it doens't work because the docker daemon is running in a VM)
