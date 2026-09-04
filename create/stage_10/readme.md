@@ -21,3 +21,22 @@ Lets run it:
 
 Let's add a volume to use hot reloading (-v [local-dir]:[container-dir])
 > docker run --rm -d -p 3002:3000 -v ./public:/app/public -v ./src:/app/src react-app:dev
+
+# Using named volumes
+> docker volume create website-data
+> docker run --rm -d -p 3002:80 --name website-main -v website-data:/usr/share/nginx/html nginx:1.27.0
+
+To show all volumes:
+> docker volume ls
+
+Show details of a volume:
+> docker volume inspect website-data
+
+Remove the volume:
+> docker volume rm website-data
+
+Remove all unused volumes:
+> docker volume rm $(docker volume ls -qf dangling=true)
+
+or simply:
+> docker volume prune
