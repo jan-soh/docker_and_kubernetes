@@ -1,0 +1,13 @@
+# 1. Build our production bundle
+FROM node:22-alpine as build
+
+WORKDIR /app
+COPY package*.json .
+# normally we would use "npm ci" here, but the react version used here has some dependency issues
+RUN npm install --force
+
+COPY . .
+
+# Here we need to use the CMD to run the app
+# Not that hot reloading is only possible if supported by this command
+CMD ["npm", "start"]
