@@ -1,0 +1,60 @@
+name: key-value-app
+
+services:
+  backend:
+    # This will build the image from the Dockerfile in the backend directory
+    build:
+      context: backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - 3001:3001
+    env_file:
+      - .env.db-key-value
+    # This can be combined with env_file
+    # MONGODB_HOST here refers to the service name of the db service (see below)
+    environment:
+      - MONGODB_HOST=db
+      - PORT=3001
+    depends_on:
+      - db
+    networks:
+      - key-value-net
+    # Enables hot reloading of the backend
+    # Works only if we run this file with "docker compose up --watch"
+    # Simply binding a volume to the backend src directory might work (if supported by nodemon for example)
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /app/src
+
+  db:
+    image: mongodb/mongodb-community-server:7.0-ubuntu2204
+    ports:
+      - 27017:27017
+    env_file:
+      - .env.db-root-cred
+      - .env.db-key-value
+    # This will mount the mongo-init.js file into the container
+    # This is the more readable way of doing it
+    # The shortcut is to simply say: - ./db-config/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    volumes:
+      - type: bind
+        source: ./db-config/mongo-init.js
+        target: /docker-entrypoint-initdb.d/mongo-init.js
+        read_only: true
+      - type: volume
+        source: mongodb-data
+        target: /data/db
+    networks:
+      - key-value-net
+
+# This will create a volume called mongodb-data
+# Note that with docker-compose up, this volume will receive a prefix either a generic one or if defined, like here, the name of this file given in line 1
+volumes:
+  mongodb-data:
+
+# This will create a network called key-value-net
+# Same as above
+networks:
+  key-value-net:

@@ -362,3 +362,44 @@ Executing curl on the the host machine would work:
 > curl http://localhost 
 
 (On Mac it doens't work because the docker daemon is running in a VM)
+
+### Compose
+
+> docker compose --help
+
+Running docker files
+> docker compose up --help \
+> docker compose up
+
+This creates and starts all containers defined in the docker compose file.
+To only start containers:
+> docker compose start
+
+When starting single services, you can also use the service name:
+> docker compose start backend
+
+This will also start all services that "backend" depends on.
+
+This will stop and remove all containers, and networks (but not the images and volumes)
+> docker compose down
+
+To remove all volumes as well:
+> docker compose down --volumes
+ 
+Only stop (not remove) containers
+> docker compose stop
+
+If those are not working, it might be that no standalone docker compose was installed.
+Then "docker-compose" will do it – which is shipped with docker.
+
+Run docker file forcing it to build the images as well
+> docker compose up --build
+
+Enable watches (e.g., for hot reloading):
+> docker compose up --watch
+
+Only list the containers of a docker compose file
+> docker compose ps
+
+Print the logs of a service (use the service name given in the docker compose file)
+> docker compose logs backend
