@@ -39,6 +39,9 @@ kubectl describe <ressource> <name>
 Logs
 > kubectl logs nginx
 
+Get logs of all previous instances
+> kubectl logs nginx --previous
+
 Only print logs of a certain container
 > kubectl logs nginx --container=nginx
 
