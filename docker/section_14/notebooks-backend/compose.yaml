@@ -1,0 +1,47 @@
+name: notebooks-backend
+
+services:
+  notebooks:
+    build:
+      context: .
+      # This will execute only the development stage from the Dockerfile.
+      target: development
+    ports:
+      - 3001:80
+    environment:
+      - PORT=80
+      # We can use interpolation here. In this case Docker will replace ${NOTEBOOKS_DB_USER} with the value of the NOTEBOOKS_DB_USER environment variable.
+      # To be able to find that variable, it must be defined in the .env file.
+      - DB_URL=mongodb://${NOTEBOOKS_DB_USER}:${NOTEBOOKS_DB_PASSWORD}@notebook-db:27017/${NOTEBOOKS_DB_NAME}
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+    networks:
+      - notebooks-net
+    depends_on:
+      - notebook-db
+
+  notebook-db:
+    image: mongodb/mongodb-community-server:7.0-ubuntu2204
+    env_file:
+      - .env
+    volumes:
+      - type: volume
+        source: notebooks-data
+        target: /data/db
+      - type: bind
+        source: ./db-config/mongo-init.js
+        target: /docker-entrypoint-initdb.d/mongo-init.js
+        read_only: true
+    networks:
+      - notebooks-net
+
+
+volumes:
+  notebooks-data:
+
+networks:
+  notebooks-net:
+  proxy-net:

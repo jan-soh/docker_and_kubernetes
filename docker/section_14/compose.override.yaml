@@ -1,0 +1,13 @@
+# This merges the default configuration with the configuration in this file.
+# The name of the file: "compose.override.yml" is mandatory.
+# If instead of merging, an override is needed, add the following to any attribute, e.g.: "networks: !override"
+# see: https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/
+services:
+  notebooks:
+    networks:
+      - notes-app-net
+  notes:
+    environment:
+      - NOTEBOOKS_API_URL=http://notebooks/api/notebooks
+    networks:
+      - notes-app-net
