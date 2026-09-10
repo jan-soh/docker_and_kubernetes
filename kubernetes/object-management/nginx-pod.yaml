@@ -1,0 +1,27 @@
+# Equivalent to the following imperative command:
+# kubectl run nginx-pod --image=nginx:1.27.0 --port=80
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+    # changing the image to nginx:1.27.0-alpine and running:
+    # kubectl replace -f nginx-pod.yaml
+    # results in an error:
+    # 'The Pod "nginx-pod" is invalid: spec: Forbidden: pod updates may not change fields other than'
+    # This is because when we created the pod with the former version of this file, created a lot more fields
+    # That are not specified here (see kubectl describe pod nginx)
+    # So, in order to fix this, we need to first delete the pod and then create it again
+    # kubectl delete -f nginx-pod.yaml
+    # kubectl create -f nginx-pod.yaml
+    # Or just use
+    # kubectl apply -f nginx-pod.yaml
+    # Note that this will not recreate the pod if it already exists
+    - image: nginx:1.27.0-alpine
+      name: nginx-container
+      ports:
+        - containerPort: 80

@@ -68,3 +68,23 @@ Also we could use the service name to access the service.
 
 Delete the service
 > kubectl delete service nginx
+
+Files:
+Running a pod configuration file:
+> kubectl create -f nginx-svc.yaml \
+
+Passing multiple files is possible:
+> kubectl create -f nginx-pod.yaml -f nginx-svc.yaml
+
+Or even a whole directory:
+> kubectl create -f .
+
+Delete everything from a file:
+> kubectl delete -f nginx-pod.yaml \
+
+Only apply the changes:
+> kubectl apply -f nginx-pod.yaml
+
+Show the differences that would be applied:
+> kubectl diff -f nginx-pod.yaml
+
